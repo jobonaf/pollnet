@@ -1,0 +1,16 @@
+Package: pollnet
+Type: Package
+Title: Get Data from the POLLnet Database
+Version: 0.1.0
+Authors@R: c(person("Giovanni", "Bonafè", role = c("aut", "cre"),
+                     email = "giovanni.bonafe@arpa.fvg.it"))
+Author: Giovanni Bonafè [aut, cre]
+Maintainer: Giovanni Bonafè <giovanni.bonafe@arpa.fvg.it>
+Description: Get data and metadata from POLLnet, the Italian
+    database of airborne pollen and spores, as provided by
+    http://dati.retecivica.bz.it OpenData portal.
+License: MIT License + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
+Imports: jsonlite, dplyr, ggplot2, igraph
