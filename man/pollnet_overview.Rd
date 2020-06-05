@@ -15,10 +15,8 @@ pollnet_overview(from = "2019-03-01", to = "2019-06-01")
 Synthetic plot of the available pollen and spores
 }
 \examples{
-p <- pollnet_overview(from="2019-03-01", to="2019-03-01")
-print(p)
-
 \dontrun{
-ggsave(p, filename=paste0("overview_",from,"_",to,".pdf"), height=22,width=14)
+p <- pollnet_overview(from="2019-03-01", to="2019-03-01")
+print(p)#' ggsave(p, filename=paste0("overview_",from,"_",to,".pdf"), height=22,width=14)
 }
 }

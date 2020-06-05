@@ -123,6 +123,7 @@ pollnet_data_station <- function(part_id=NULL, from=NULL, to=NULL, stat_id, verb
 #' @description \code{pollnet_data} returns data of all the monitoring stations
 #' @param part_ids Vector of numeric codes of the particles (pollen and/or spore)
 #' @param ... Additional parameters passed to pollnet_data_station
+#' @export
 pollnet_data <- function(part_ids, from, to, ...) {
 	stat_ids <- pollnet_stations()$STAT_ID
 	args <- expand.grid(part_id=part_ids, stat_id=stat_ids)

@@ -1,0 +1,105 @@
+---
+title: "Some analysis of the POLLnet data"
+author: "Giovanni Bonafè"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Some analysis of the POLLnet data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+First we extract some data.
+```{r  error=FALSE, message=FALSE, warning=FALSE, fig.width=7}
+library(pollnet)
+dat <- pollnet_data_station(part_id = 1373,
+                            stat_id = 84,
+                            from = "2011-01-01",
+                            to   = "2018-12-31")
+```
+
+Pollen concentrations can be classified according to the limits provided by function `pollnet_particles`.
+```{r message=FALSE, warning=FALSE}
+pp <- pollnet_particles()
+breaks <- c(0, pp[pp$PART_ID==1373, c("PART_LOW", "PART_MIDDLE", "PART_HIGH")], Inf)
+library(lubridate)
+library(dplyr)
+library(tidyr)
+library(knitr)
+dat %>%
+  filter(!is.na(REMA_CONCENTRATION)) %>%
+  mutate(Month = lubridate::month(REMA_DATE),
+         Conc = cut(REMA_CONCENTRATION, 
+                    breaks=breaks, 
+                    include.lowest = T)) %>%
+  group_by(Month, Conc) %>%
+  summarize(Ndays=n()) %>%
+  spread(key = Conc, value = Ndays, fill = 0) %>%
+  kable(row.names = F)
+```
+
+Another R package, `pollen`, provides tools for working with aerobiological data. Have a look [here](https://nowosad.github.io/pollen/) and [here](https://cdn.rawgit.com/Nowosad/pollen/master/vignettes/intro.html). With the function `pollen_season` we can calculate pollen season limits.
+```{r}
+library(pollen)
+df <- dat %>% 
+  filter(!is.na(REMA_CONCENTRATION)) %>%
+  mutate(DATE=as.Date(REMA_DATE))
+pollen_season(value = df$REMA_CONCENTRATION, date  = df$DATE, method = "95")
+```
+
+Different methods can lead to different estimations
+```{r error=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=2}
+library(purrr)
+ps_methods <- c("90", "95", "98", "Jager", "Lejoly")
+names(ps_methods) <- ps_methods
+df_seasons <- ps_methods %>%
+  map_dfr(~pollen_season(method = ., 
+                         value  = df$REMA_CONCENTRATION, 
+                         date   = df$DATE),
+          .id = "method")
+library(ggplot2)
+ggplot(df_seasons) + 
+  geom_crossbar(fatten=0,
+                aes(x=method, y=start, 
+                    ymin=start, ymax=end, 
+                    group=paste(method,year,start)),
+                col="orange")+
+  geom_text(aes(x=method, y=start, 
+                label=paste0(format(start,"%d/%m"),"-\n",format(end,"%d/%m/%Y"))), 
+            size=2.5, adj=0)+
+  coord_flip()+
+  theme_minimal()+
+  theme(axis.title.x =element_blank(),
+        axis.text.x  =element_blank(),
+        axis.ticks.x =element_blank())
+```
+
+
+
+```{r error=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=6}
+## FORSE PRIMA MEGLIO TOGLIERE OUTLIERS CON outliers_replacer
+dat <- pollnet_data(part_ids = c(1373,1378,1391), 
+                    from = "2018-04-01", 
+                    to   = "2018-04-10")
+breaks <- c(0,quantile(dat$REMA_CONCENTRATION[dat$REMA_CONCENTRATION>0],
+                   c(0.0001,0.001,0.01,0.7), na.rm=T))
+ggplot(dat, aes(x = LONGITUDE, y = LATITUDE,
+                colour = REMA_CONCENTRATION)) +
+  geom_point(alpha = 0.7) +
+#  scale_colour_gradientn(colours = c("grey80","olivedrab","orange","red","purple"),
+#                         values = breaks) +
+  facet_grid(REMA_DATE~PART_NAME_L)+
+  theme_bw()
+```
+
+
+
+
+

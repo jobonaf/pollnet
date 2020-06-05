@@ -1,0 +1,91 @@
+---
+title: "Extract data from the POLLnet database"
+author: "Giovanni Bonafè"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Extract data from the POLLnet database}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+The R package `pollnet` gives access to pollen and spores data collected by the Italian monitoring network. More information about the network [here](http://dati.retecivica.bz.it/it/dataset/italian-pollnet-webservices).
+
+In an R session, you can install the package as follows
+```{r eval = FALSE}
+devtools::install_github("jobonaf/pollnet")
+```
+
+Once installed and loaded, let's see a list of the available functions
+```{r}
+library(pollnet)
+lsf.str("package:pollnet")
+```
+
+We can get a list of the available particles with function `pollnet_particles`:
+```{r}
+pp <- pollnet_particles ()
+knitr::kable(pp[,c("PART_ID", "PART_NAME_L")])
+```
+
+Italian regions are identified with numeric codes
+```{r}
+pr <- pollnet_regions ()
+knitr::kable(pr)
+```
+
+With function `pollnet_stations` we can get metadata of the stations, specifying a single region
+```{r}
+ps <- pollnet_stations (regi_id = 27)
+knitr::kable(ps)
+```
+
+We can extract metadata of all the Italian stations as well. Packages `leaflet` and `htmltools` help us plotting them in an interactive map.
+```{r}
+ps <- pollnet_stations ()
+library(leaflet)
+library(htmltools)
+leaflet(ps, width = 600, height = 400) %>% 
+  addTiles() %>%
+  addCircleMarkers(label = ~htmlEscape(STAT_NAME_I), radius = 5)
+```
+
+Now we can extract measured data. For example of birch pollen (_Betula_, __1373__). Package `dplyr` help us summarizing the results: we can display the highest data for each region.
+```{r error=FALSE, message=FALSE, warning=FALSE}
+dat <- pollnet_data(part_ids = 1373, 
+                    from = "2019-03-01", 
+                    to = "2019-03-07")
+library(dplyr)
+dat %>% 
+  group_by(REGI_NAME_I) %>% 
+  arrange(desc(REMA_CONCENTRATION)) %>% 
+  slice(1) %>% 
+  select(REMA_DATE, REMA_CONCENTRATION, REGI_NAME_I, STAT_NAME_I) %>%
+  knitr::kable()
+```
+
+Extracting a single station and a single pollen type is faster. Package `ggplot2` help us plotting the data.
+```{r  error=FALSE, message=FALSE, warning=FALSE, fig.width=7}
+dat <- pollnet_data_station(part_id = 1373,
+                            stat_id = 84,
+                            from = "2011-01-01",
+                            to   = "2018-12-31")
+library(ggplot2)
+ggplot(dat) +
+  geom_line(aes(x=REMA_DATE, 
+                y=REMA_CONCENTRATION, 
+                col=STAT_NAME_I))
+```
+
+
+
+
+
+
